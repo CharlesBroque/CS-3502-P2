@@ -4,6 +4,7 @@ using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
+using System.Text;
 using System.Windows.Forms;
 
 namespace CpuScheduler
@@ -462,6 +463,119 @@ Instructions:
             return processResults.Values.OrderBy(r => r.StartTime).ToList();
         }
 
+        /// NEW CODE
+        /// <summary>
+        /// Here's HRRN (highest response ratio next). HRRN is non-preemptive and selects processes based on a maximal "response ratio",
+        /// equal to (waiting time + burst time) / burst time. This simplifies to 1 + waiting time / burst time, so for the purpose of
+        /// maximizing, we can ignore the constant 1.
+        /// </summary>
+        private List<SchedulingResult> RunHighestResponseRatioNext(List<ProcessData> processes)
+        {
+            var results = new List<SchedulingResult>();
+            var currentTime = 0;
+            var remainingProcesses = processes.ToList();
+
+            while (remainingProcesses.Count > 0)
+            {
+                // Get processes that have arrived by current time
+                var availableProcesses = remainingProcesses.Where(p => p.ArrivalTime <= currentTime).ToList();
+
+                if (availableProcesses.Count == 0)
+                {
+                    // No process has arrived yet, jump to next arrival time
+                    currentTime = remainingProcesses.Min(p => p.ArrivalTime);
+                    continue;
+                }
+
+                // Select process with highest response ratio
+                var nextProcess = availableProcesses.OrderByDescending(p => ((currentTime -  p.ArrivalTime) / (float) p.BurstTime)).First();
+
+                var startTime = Math.Max(currentTime, nextProcess.ArrivalTime);
+                var finishTime = startTime + nextProcess.BurstTime;
+                var waitingTime = startTime - nextProcess.ArrivalTime;
+                var turnaroundTime = finishTime - nextProcess.ArrivalTime;
+
+                results.Add(new SchedulingResult
+                {
+                    ProcessID = nextProcess.ProcessID,
+                    ArrivalTime = nextProcess.ArrivalTime,
+                    BurstTime = nextProcess.BurstTime,
+                    StartTime = startTime,
+                    FinishTime = finishTime,
+                    WaitingTime = waitingTime,
+                    TurnaroundTime = turnaroundTime
+                });
+
+                currentTime = finishTime;
+                remainingProcesses.Remove(nextProcess);
+            }
+
+            return results.OrderBy(r => r.StartTime).ToList();
+        }
+
+        /// NEW CODE
+        /// <summary>
+        /// Here's a lottery scheduling implementation (non-preemptive because it's easier). Lottery scheduling gives processes "tickets" and then
+        /// chooses a ticket at random to determine execution order. There are many ways to assign how many tickets a process should get and how many
+        /// total tickets there should be. For simplicity, this implementation uses priority to assign tickets.
+        /// </summary>
+        private List<SchedulingResult> RunLotteryScheduling(List<ProcessData> processes)
+        {
+            var results = new List<SchedulingResult>();
+            var currentTime = 0;
+            var remainingProcesses = processes.ToList();
+            var rng = new Random();
+
+            while (remainingProcesses.Count > 0)
+            {
+                // Get processes that have arrived by current time
+                var availableProcesses = remainingProcesses.Where(p => p.ArrivalTime <= currentTime).ToList();
+
+                if (availableProcesses.Count == 0)
+                {
+                    // No process has arrived yet, jump to next arrival time
+                    currentTime = remainingProcesses.Min(p => p.ArrivalTime);
+                    continue;
+                }
+
+                // Allocate tickets (many options, this is just one)
+                var totalTickets = availableProcesses.Sum(p => p.Priority);
+
+                // Choose ticket, select process
+                var choice = rng.Next(totalTickets); var counter = 0; var nextProcess = availableProcesses.Last();
+                foreach (var process in availableProcesses)
+                {
+                    counter += process.Priority;
+                    if (counter > choice)
+                    {
+                        nextProcess = process;
+                        break;
+                    }
+                }
+
+                var startTime = Math.Max(currentTime, nextProcess.ArrivalTime);
+                var finishTime = startTime + nextProcess.BurstTime;
+                var waitingTime = startTime - nextProcess.ArrivalTime;
+                var turnaroundTime = finishTime - nextProcess.ArrivalTime;
+
+                results.Add(new SchedulingResult
+                {
+                    ProcessID = nextProcess.ProcessID,
+                    ArrivalTime = nextProcess.ArrivalTime,
+                    BurstTime = nextProcess.BurstTime,
+                    StartTime = startTime,
+                    FinishTime = finishTime,
+                    WaitingTime = waitingTime,
+                    TurnaroundTime = turnaroundTime
+                });
+
+                currentTime = finishTime;
+                remainingProcesses.Remove(nextProcess);
+            }
+
+            return results.OrderBy(r => r.StartTime).ToList();
+        }
+
         /// <summary>
         /// STUDENTS: Data structure for algorithm results
         /// Use this to store and display scheduling algorithm outcomes
@@ -511,14 +625,20 @@ Instructions:
             // Add summary statistics
             var avgWaiting = results.Average(r => r.WaitingTime);
             var avgTurnaround = results.Average(r => r.TurnaroundTime);
-            
-            var summaryItem = new ListViewItem("SUMMARY");
-            summaryItem.SubItems.Add(algorithmName);
-            summaryItem.SubItems.Add($"{results.Count} processes");
+            var cpuUtilization = results.Sum(r => r.BurstTime) / (float) results.Max(r => r.FinishTime) * 100;
+            var throughput = results.Count / (float) results.Max(r => r.FinishTime);
+
+            var summaryHeader = new ListViewItem("SUMMARY");
+            summaryHeader.SubItems.Add(algorithmName);
+            var summaryItem = new ListViewItem($"Processes: {results.Count}");
+            summaryItem.SubItems.Add("");
+            summaryItem.SubItems.Add($"CPU Util: {cpuUtilization:F1}%");
+            summaryItem.SubItems.Add("");
+            summaryItem.SubItems.Add($"Proc/s: {throughput:F2}");
             summaryItem.SubItems.Add($"Avg Wait: {avgWaiting:F1}");
             summaryItem.SubItems.Add($"Avg Turn: {avgTurnaround:F1}");
-            summaryItem.SubItems.Add("");
-            summaryItem.SubItems.Add("");
+            
+            listView1.Items.Add(summaryHeader);
             listView1.Items.Add(summaryItem);
 
             // TODO: STUDENTS - Add performance metrics calculation and display here
@@ -740,6 +860,61 @@ Instructions:
         }
 
         /// <summary>
+        /// STUDENTS: Saves listView1 (results data) to CSV file for external editing or backup
+        /// This allows you to prepare process data in Excel/CSV editors
+        /// </summary>
+        private void SaveResults_Click(object sender, EventArgs e)
+        {
+            if (listView1.Items.ContainsKey("welcomeItem"))
+            {
+                MessageBox.Show("No results data to save. Please run a simulation first.",
+                    "No Data", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using (var saveDialog = new SaveFileDialog())
+            {
+                saveDialog.Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*";
+                saveDialog.DefaultExt = "csv";
+                saveDialog.FileName = "ResultsData.csv";
+                saveDialog.Title = "Save Results Data";
+
+                if (saveDialog.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        using (var writer = new System.IO.StreamWriter(saveDialog.FileName))
+                        {
+                            // Write header
+                            writer.WriteLine("Process ID,Arrival,Burst,Start,Finish,Waiting,Turnaround");
+
+                            // Write data rows
+                            foreach (ListViewItem item in listView1.Items)
+                            {
+                                StringBuilder sb = new StringBuilder();
+                                for (int i = 0; i < item.SubItems.Count; i++)
+                                {
+                                    sb.Append(item.SubItems[i].Text);
+                                    sb.Append(',');
+                                }
+                                sb.Remove(sb.Length - 1, 1);
+                                writer.WriteLine(sb);
+                            }
+                        }
+
+                        MessageBox.Show($"Process data saved successfully to:\n{saveDialog.FileName}",
+                            "Export Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error saving file: {ex.Message}",
+                            "Save Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// STUDENTS: Loads process data from CSV file for testing custom datasets
         /// This allows you to prepare complex test scenarios in Excel/CSV editors
         /// </summary>
@@ -901,6 +1076,66 @@ Instructions:
             }
         }
 
+        /// NEW CODE
+        /// <summary>
+        /// Executes the Highest Response Ratio Next algorithm using DataGrid data.
+        /// STUDENTS: Updated to use GetProcessDataFromGrid() instead of prompts
+        /// Use this pattern for your custom algorithm implementations
+        /// </summary>
+        private void HighestResponseRatioNextButton_Click(object sender, EventArgs e)
+        {
+            var processData = GetProcessDataFromGrid();
+            if (processData.Count > 0)
+            {
+                // STUDENTS: Updated implementation using DataGrid data
+                var results = RunHighestResponseRatioNext(processData);
+
+                // Update Results tab with detailed scheduling results
+                DisplaySchedulingResults(results, "HRRN - Highest Response Ratio Next");
+
+                // Switch to Results panel and update sidebar
+                ShowPanel(resultsPanel);
+                sidePanel.Height = btnDashBoard.Height;
+                sidePanel.Top = btnDashBoard.Top;
+            }
+            else
+            {
+                MessageBox.Show("Please set process count and ensure the data grid has process data.",
+                    "No Process Data", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtProcess.Focus();
+            }
+        }
+
+        /// NEW CODE
+        /// <summary>
+        /// Executes the Highest Response Ratio First algorithm using DataGrid data.
+        /// STUDENTS: Updated to use GetProcessDataFromGrid() instead of prompts
+        /// Use this pattern for your custom algorithm implementations
+        /// </summary>
+        private void LotterySchedulingButton_Click(object sender, EventArgs e)
+        {
+            var processData = GetProcessDataFromGrid();
+            if (processData.Count > 0)
+            {
+                // STUDENTS: Updated implementation using DataGrid data
+                var results = RunLotteryScheduling(processData);
+
+                // Update Results tab with detailed scheduling results
+                DisplaySchedulingResults(results, "Lottery Scheduling");
+
+                // Switch to Results panel and update sidebar
+                ShowPanel(resultsPanel);
+                sidePanel.Height = btnDashBoard.Height;
+                sidePanel.Top = btnDashBoard.Top;
+            }
+            else
+            {
+                MessageBox.Show("Please set process count and ensure the data grid has process data.",
+                    "No Process Data", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtProcess.Focus();
+            }
+        }
+
         /// <summary>
         /// Executes the Priority algorithm using DataGrid data.
         /// STUDENTS: Updated to use GetProcessDataFromGrid() instead of prompts
@@ -986,6 +1221,7 @@ Instructions:
             listView1.Columns.Add("Information", 400, HorizontalAlignment.Left);
             var welcomeItem = new ListViewItem("No results yet");
             welcomeItem.SubItems.Add("Run a scheduling algorithm to see results here");
+            welcomeItem.Name = "welcomeItem";
             listView1.Items.Add(welcomeItem);
             
             // Initialize Welcome and About content
@@ -1000,11 +1236,14 @@ Instructions:
             ApplyRoundedCorners(btnGenerateRandom);
             ApplyRoundedCorners(btnClearAll);
             ApplyRoundedCorners(btnSaveData);
+            ApplyRoundedCorners(btnSaveResults);
             ApplyRoundedCorners(btnLoadData);
             ApplyRoundedCorners(btnFCFS);
             ApplyRoundedCorners(btnSJF);
             ApplyRoundedCorners(btnPriority);
             ApplyRoundedCorners(btnRoundRobin);
+            ApplyRoundedCorners(btnHRRN);
+            ApplyRoundedCorners(btnLS);
             ApplyRoundedCorners(btnDarkModeToggle);
             
             // Apply default dark theme
@@ -1121,11 +1360,14 @@ Instructions:
             ApplyDarkThemeToSchedulerButton(btnGenerateRandom);
             ApplyDarkThemeToSchedulerButton(btnClearAll);
             ApplyDarkThemeToSchedulerButton(btnSaveData);
+            ApplyDarkThemeToSchedulerButton(btnSaveResults);
             ApplyDarkThemeToSchedulerButton(btnLoadData);
             ApplyDarkThemeToSchedulerButton(btnFCFS);
             ApplyDarkThemeToSchedulerButton(btnSJF);
             ApplyDarkThemeToSchedulerButton(btnPriority);
             ApplyDarkThemeToSchedulerButton(btnRoundRobin);
+            ApplyDarkThemeToSchedulerButton(btnHRRN);
+            ApplyDarkThemeToSchedulerButton(btnLS);
         }
 
         /// <summary>
@@ -1193,6 +1435,7 @@ Instructions:
             ApplyLightThemeToSchedulerButton(btnGenerateRandom);
             ApplyLightThemeToSchedulerButton(btnClearAll);
             ApplyLightThemeToSchedulerButton(btnSaveData);
+            ApplyLightThemeToSchedulerButton(btnSaveResults);
             ApplyLightThemeToSchedulerButton(btnLoadData);
             
             // Algorithm buttons with their original colors
@@ -1200,12 +1443,16 @@ Instructions:
             btnSJF.BackColor = Color.AntiqueWhite;
             btnPriority.BackColor = Color.Bisque;
             btnRoundRobin.BackColor = Color.PapayaWhip;
+            btnHRRN.BackColor = Color.PaleVioletRed;
+            btnLS.BackColor = Color.PaleGreen;
             
             // Reset text color for algorithm buttons
             btnFCFS.ForeColor = SystemColors.ControlText;
             btnSJF.ForeColor = SystemColors.ControlText;
             btnPriority.ForeColor = SystemColors.ControlText;
             btnRoundRobin.ForeColor = SystemColors.ControlText;
+            btnHRRN.ForeColor = SystemColors.ControlText;
+            btnLS.ForeColor = SystemColors.ControlText;
         }
 
         /// <summary>

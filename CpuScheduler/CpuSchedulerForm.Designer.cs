@@ -48,6 +48,7 @@
             this.btnGenerateRandom = new System.Windows.Forms.Button();
             this.btnClearAll = new System.Windows.Forms.Button();
             this.btnSaveData = new System.Windows.Forms.Button();
+            this.btnSaveResults = new System.Windows.Forms.Button();
             this.btnLoadData = new System.Windows.Forms.Button();
             this.cmbLoadExample = new System.Windows.Forms.ComboBox();
             this.algorithmButtonPanel = new System.Windows.Forms.FlowLayoutPanel();
@@ -56,6 +57,8 @@
             this.aboutPanel = new System.Windows.Forms.Panel();
             this.aboutTextBox = new System.Windows.Forms.RichTextBox();
             this.btnRoundRobin = new System.Windows.Forms.Button();
+            this.btnHRRN = new System.Windows.Forms.Button();
+            this.btnLS = new System.Windows.Forms.Button();
             this.restartApp = new System.Windows.Forms.Label();
             this.btnPriority = new System.Windows.Forms.Button();
             this.btnSJF = new System.Windows.Forms.Button();
@@ -299,6 +302,7 @@
             this.schedulerPanel.Controls.Add(this.btnGenerateRandom);
             this.schedulerPanel.Controls.Add(this.btnClearAll);
             this.schedulerPanel.Controls.Add(this.btnSaveData);
+            this.schedulerPanel.Controls.Add(this.btnSaveResults);
             this.schedulerPanel.Controls.Add(this.btnLoadData);
             this.schedulerPanel.Controls.Add(this.cmbLoadExample);
             this.schedulerPanel.Controls.Add(this.algorithmButtonPanel);
@@ -394,6 +398,19 @@
             this.btnSaveData.Visible = true;
             this.btnSaveData.Click += new System.EventHandler(this.SaveData_Click);
             // 
+            // btnSaveResults
+            // 
+            this.btnSaveResults.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnSaveResults.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnSaveResults.Location = new System.Drawing.Point(490, 290);
+            this.btnSaveResults.Name = "btnSaveResults";
+            this.btnSaveResults.Size = new System.Drawing.Size(120, 60);
+            this.btnSaveResults.TabIndex = 27;
+            this.btnSaveResults.Text = "💾 Export Results as CSV";
+            this.btnSaveResults.UseVisualStyleBackColor = true;
+            this.btnSaveResults.Visible = true;
+            this.btnSaveResults.Click += new System.EventHandler(this.SaveResults_Click);
+            // 
             // btnLoadData
             // 
             this.btnLoadData.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
@@ -421,6 +438,8 @@
             this.algorithmButtonPanel.Controls.Add(this.btnSJF);
             this.algorithmButtonPanel.Controls.Add(this.btnPriority);
             this.algorithmButtonPanel.Controls.Add(this.btnRoundRobin);
+            this.algorithmButtonPanel.Controls.Add(this.btnHRRN);
+            this.algorithmButtonPanel.Controls.Add(this.btnLS);
             this.algorithmButtonPanel.FlowDirection = System.Windows.Forms.FlowDirection.LeftToRight;
             this.algorithmButtonPanel.Location = new System.Drawing.Point(20, 450);
             this.algorithmButtonPanel.Name = "algorithmButtonPanel";
@@ -443,6 +462,38 @@
             this.btnRoundRobin.Text = "ROUND ROBIN";
             this.btnRoundRobin.UseVisualStyleBackColor = false;
             this.btnRoundRobin.Click += new System.EventHandler(this.RoundRobinButton_Click);
+            // 
+            // btnHRRN
+            // 
+            this.btnHRRN.Enabled = true;
+            this.btnHRRN.BackColor = System.Drawing.Color.PapayaWhip;
+            this.btnHRRN.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnHRRN.FlatAppearance.MouseOverBackColor = System.Drawing.Color.PaleGreen;
+            this.btnHRRN.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnHRRN.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnHRRN.Margin = new System.Windows.Forms.Padding(10, 5, 10, 5);
+            this.btnHRRN.Name = "btnHRRN";
+            this.btnHRRN.Size = new System.Drawing.Size(140, 50);
+            this.btnHRRN.TabIndex = 13;
+            this.btnHRRN.Text = "HRRN";
+            this.btnHRRN.UseVisualStyleBackColor = false;
+            this.btnHRRN.Click += new System.EventHandler(this.HighestResponseRatioNextButton_Click);
+            // 
+            // btnLS
+            // 
+            this.btnLS.Enabled = true;
+            this.btnLS.BackColor = System.Drawing.Color.PapayaWhip;
+            this.btnLS.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnLS.FlatAppearance.MouseOverBackColor = System.Drawing.Color.PaleGreen;
+            this.btnLS.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnLS.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnLS.Margin = new System.Windows.Forms.Padding(10, 5, 10, 5);
+            this.btnLS.Name = "btnLS";
+            this.btnLS.Size = new System.Drawing.Size(140, 50);
+            this.btnLS.TabIndex = 14;
+            this.btnLS.Text = "LOTTERY SCHEDULING";
+            this.btnLS.UseVisualStyleBackColor = false;
+            this.btnLS.Click += new System.EventHandler(this.LotterySchedulingButton_Click);
             // 
             // restartApp
             // 
@@ -606,6 +657,8 @@
         private System.Windows.Forms.Button btnPriority;
         private System.Windows.Forms.Button btnSJF;
         private System.Windows.Forms.Button btnFCFS;
+        private System.Windows.Forms.Button btnHRRN;
+        private System.Windows.Forms.Button btnLS;
         public System.Windows.Forms.TextBox txtProcess;
         private System.Windows.Forms.Label labelProcess;
         private System.Windows.Forms.Panel sidePanel;
@@ -618,6 +671,7 @@
         private System.Windows.Forms.Button btnGenerateRandom;
         private System.Windows.Forms.Button btnClearAll;
         private System.Windows.Forms.Button btnSaveData;
+        private System.Windows.Forms.Button btnSaveResults;
         private System.Windows.Forms.Button btnLoadData;
         private System.Windows.Forms.ComboBox cmbLoadExample;
         private System.Windows.Forms.FlowLayoutPanel algorithmButtonPanel;
