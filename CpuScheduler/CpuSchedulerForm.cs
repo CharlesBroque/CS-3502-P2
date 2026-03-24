@@ -627,13 +627,14 @@ Instructions:
             var avgTurnaround = results.Average(r => r.TurnaroundTime);
             var cpuUtilization = results.Sum(r => r.BurstTime) / (float) results.Max(r => r.FinishTime) * 100;
             var throughput = results.Count / (float) results.Max(r => r.FinishTime);
+            var responseTime = results.Average(r => r.StartTime - r.ArrivalTime);
 
             var summaryHeader = new ListViewItem("SUMMARY");
             summaryHeader.SubItems.Add(algorithmName);
             var summaryItem = new ListViewItem($"Processes: {results.Count}");
             summaryItem.SubItems.Add("");
             summaryItem.SubItems.Add($"CPU Util: {cpuUtilization:F1}%");
-            summaryItem.SubItems.Add("");
+            summaryItem.SubItems.Add($"Resp Time: {responseTime:F1}");
             summaryItem.SubItems.Add($"Proc/s: {throughput:F2}");
             summaryItem.SubItems.Add($"Avg Wait: {avgWaiting:F1}");
             summaryItem.SubItems.Add($"Avg Turn: {avgTurnaround:F1}");
