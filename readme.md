@@ -2,7 +2,7 @@
 
 This project provides a Windows Forms application that demonstrates common CPU scheduling algorithms through an interactive graphical interface. Each algorithm prompts for basic input and displays the resulting waiting or turnaround times using message boxes and on-screen tables.
 
-**Fork maintained by Chris Regan** - Original creator: Francis (used with permission)
+**Forked from a fork maintained by Chris Regan** - Original creator: Francis (used with permission)
 
 ## Project status
 
@@ -14,8 +14,12 @@ The simulator is functional but still a work in progress. Currently the followin
 | Shortest Job First | `Algorithms.RunShortestJobFirst` | Jobs are sorted by burst time before execution. |
 | Priority Scheduling | `Algorithms.RunPriorityScheduling` | User supplies a priority value for each job. |
 | Round Robin | `Algorithms.RunRoundRobin` | Requires a quantum time parameter. |
+| NEW: Highest Response Ratio Next | `CpuSchedulerForm.RunHighestResponseRatioNext` | Jobs are sorted by a (reduced) response ratio, equal to wait time divided by burst time. |
+| NEW: Lottery Scheduling | `CpuSchedulerForm.RunLotteryScheduling` | Jobs are awarded tickets based on their priority and selected at random. |
 
 Additional algorithms can easily be added by extending `Algorithms.cs`.
+
+Forker's note: I did not even realize `Algorithms.cs` existed. Additional algorithms are available in the simulator but were not implemented in `Algorithms.cs`. They are built directly into `CpuSchedulerForm.cs` like the others present in that source file. I have tested the simulator on Windows 10 and it appears to work fine.
 
 ## Requirements
 
